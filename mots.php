@@ -33,7 +33,7 @@ $words = preg_split("@[ ,]+@", $q);
   <head>
     <meta charset="UTF-8" />
     <script src="lib/dygraph.js">//</script>
-    <script src="lib/smooth-plotter.js">//</script>
+    <script src="lib/plotHistory.js">//</script>
     <link rel="stylesheet" type="text/css" href="lib/dygraph.css"/>
     <link rel="stylesheet" type="text/css" href="g1gram.css"/>
 <?php
@@ -73,17 +73,32 @@ $select = $pdo->prepare("SELECT rank FROM $table WHERE form = ? and year = ?; ")
 $select->bindParam(1, $form, PDO::PARAM_STR);
 $select->bindParam(2, $year, PDO::PARAM_INT);
 $i = 0;
+$smooth= 10;
+$smoothCoef = 1.5;
+$deviation = array();
 foreach ($forms as $form) {
+  $dragged = array_fill(0, $smooth, 0);
+  $lastvalue = 0;
+  $lastdelta = 0;
   for ($year=$from; $year <= $to; $year++) {
     $select->execute();
     list($value) = $select->fetch(PDO::FETCH_NUM);
     if (!$value) {
+      $dragged[$year % $smooth] = 0;
       $data[$year][$i] = "null";
-      continue;
+      $deviation[$year][$i] = 0;
     }
-    if ($value < 1000000 && $max < $value) $max = $value;
-    if ($value && $min > $value) $min = $value;
-    $data[$year][$i] = $value;
+    else {
+      if ($value < 1000000 && $max < $value) $max = $value;
+      if ($value && $min > $value) $min = $value;
+      $data[$year][$i] = $value;
+      if ($lastvalue) $dragged[$year % $smooth] = ($lastvalue - $value);
+      $delta = abs(array_sum($dragged) / $smooth);
+      $delta = 2 * $delta;
+      if ($delta < $value/20) $delta = 0;
+      $deviation[$year][$i] = $delta;
+    }
+    $lastvalue = $value;
   }
   $i++;
 }
@@ -93,13 +108,14 @@ foreach ($forms as $form) {
 data = [
 <?php
 $first = true;
-foreach ($data as $year => $ranks) {
+$cols = count($forms);
+for ($year=$from; $year <= $to; $year++) {
   if ($first) {
     $first = false;
   } else {
     echo ",\n";
   }
-  echo "  [", $year, ", ", implode(", ", $ranks), "]";
+  echo "  [", $year, ", ", implode(", ", $data[$year]), "]";
 }
   ?>
 
@@ -111,50 +127,52 @@ const ROLL_STORE = 'g1gramRoll';
 var rollPeriod = localStorage.getItem(ROLL_STORE);
 if (!rollPeriod) rollPeriod = 2;
 // draw the graph with all the configuration
-smoothPlotter.smoothing = 0;
 attrs = {
-  title : "Google Books 2012 français, <?= ($table == "lemma")?"lemmes":"mots" ?>, variation annuelle (rang 1 = fréquent, 500K = 500 000 = rare)",
+  title : "<?= ($table == "lemma")?"Lemmes":"Mots" ?> de Google Books 2012 français (rang 1 = fréquent, 500K = 500 000 = rare)",
   ylabel: "Rang",
   labels: labels,
   // labelsKMB: true,
   legend: "follow",
   labelsSeparateLines: true,
-  // ylabel: "occurrence / 100 000 mots",
+  ylabel: "Rang",
+  // errorBars: true,
+  fillAlpha: 0.25,
+  logscale: true,
+  strokeWidth: 10,
+  plotter: Dygraph.plotHistory,
   // xlabel: "Répartition des années en nombre de mots",
-  showRoller: true,
-  rollPeriod: rollPeriod,
-  drawCallback: function() {
-    localStorage.setItem(ROLL_STORE, this.rollPeriod());
-  },
   colors:[
     'hsla(0, 50%, 50%, 1)',
     'hsla(224, 50%, 50%, 1)',
     'hsla(128, 50%, 30%, 1)',
     'hsla(32, 50%, 50%, 1)',
-    'hsla(160, 50%, 50%, 1)',
+    'hsla(64, 80%, 50%, 1)',
     'hsla(192, 50%, 50%, 1)',
     'hsla(96, 50%, 50%, 1)',
-    'hsla(64, 80%, 50%, 1)',
   ],
-  // strokeBorderWidth: 2,
-  plotter: smoothPlotter,
-  strokeWidth: 12,
-  // highlightCircleSize: 8,
+  highlightSeriesOpts: {
+    // strokeWidth: 3
+  },
+  // showRoller: true,
+  rollPeriod: 1,
+  drawCallback: function() {
+    localStorage.setItem(ROLL_STORE, this.rollPeriod());
+  },
   /*
-  drawPoints: true,
-  pointSize: 2,
+  pointSize: 6,
   drawPointCallback: function (g, name, ctx, canvasx, canvasy, color, radius) {
-    console.log(radius);
+    ctx.fillStyle = color;
     ctx.beginPath();
-    color = color.replace(/hsla/, "hsl").replace(/, 0.\d+/, "");
-    ctx.fillStyle = "#000";
-    ctx.strokeStyle = color;
+    ctx.globalAlpha = 0.1;
     ctx.arc(canvasx, canvasy, radius, 0, 2 * Math.PI, false);
-    ctx.lineWidth = 5;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.fillStyle = "#000";
+    ctx.globalAlpha = 1;
+    ctx.arc(canvasx, canvasy, 1.5, 0, 2 * Math.PI, false);
     ctx.fill();
   },
   */
-  logscale: true,
   axes : {
     x: {
       independentTicks: true,
