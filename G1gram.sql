@@ -9,15 +9,16 @@ CREATE TABLE word (
   lemma       TEXT NOT NULL,
   year        INTEGER NOT NULL,
   count       INTEGER NOT NULL,
-  freq        REAL NOT NULL,
+  freq        REAL,
   rank        INTEGER,
   ranklog     REAL,
 
   id          INTEGER, -- rowid auto
   PRIMARY KEY(id ASC)
 );
--- CREATE UNIQUE INDEX word_form ON word(form, year);
--- CREATE INDEX word_count ON word(year, count DESC, form);
+CREATE UNIQUE INDEX word_form ON word(form, year);
+CREATE INDEX word_count ON word(year, count DESC, form);
+CREATE INDEX word_rank ON word(year, rank);
 CREATE INDEX word_lemma ON word(year, lemma);
 
 CREATE TABLE more (
@@ -30,23 +31,23 @@ CREATE TABLE more (
   PRIMARY KEY(id ASC)
 );
 
+CREATE TABLE lemma (
+  year        INTEGER NOT NULL,
+  form        TEXT NOT NULL,
+  count       INTEGER NOT NULL,
+  rank        INTEGER,
+  freq        REAL,
+
+  id          INTEGER,
+  PRIMARY KEY(id ASC)
+);
+CREATE INDEX lemma_count ON lemma(year, count DESC);
+CREATE UNIQUE INDEX lemma_form ON lemma(form, year);
+
 
 
 CREATE TABLE year (
   count       INTEGER NOT NULL,
-  id          INTEGER, -- rowid auto
-  PRIMARY KEY(id ASC)
-);
-
-CREATE TABLE lemma (
-  -- word
-  year        INTEGER NOT NULL,
-  entry       TEXT NOT NULL,
-  count       INTEGER NOT NULL,
-  rank        INTEGER,
-  freq        REAL,
-  ranklog     REAL,
-
   id          INTEGER, -- rowid auto
   PRIMARY KEY(id ASC)
 );
