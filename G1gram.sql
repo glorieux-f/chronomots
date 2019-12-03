@@ -43,6 +43,7 @@ CREATE TABLE lemma (
 );
 CREATE INDEX lemma_count ON lemma(year, count DESC);
 CREATE UNIQUE INDEX lemma_form ON lemma(form, year);
+CREATE INDEX lemma_yearRank ON lemma(year, rank DESC);
 
 
 

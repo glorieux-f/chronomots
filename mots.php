@@ -138,7 +138,7 @@ attrs = {
   // errorBars: true,
   fillAlpha: 0.25,
   logscale: true,
-  strokeWidth: 10,
+  strokeWidth: 15,
   plotter: Dygraph.plotHistory,
   // xlabel: "Répartition des années en nombre de mots",
   colors:[
@@ -212,7 +212,7 @@ attrs = {
 };
 attrs.underlayCallback = function(canvas, area, g) {
   canvas.fillStyle = "rgba(192, 192, 192, 0.2)";
-  var periods = [[1562,1598], [1648,1653], [1789,1795], [1914,1918], [1939,1945]];
+  var periods = [[1562,1598], [1648,1653], [1789,1795], [1870,1871], [1914,1918], [1939,1945]];
   var lim = periods.length;
   for (var i = 0; i < lim; i++) {
     var bottom_left = g.toDomCoords(periods[i][0], -20);
