@@ -1,30 +1,41 @@
 <?php
+$datemin = 1550;
+$datemax = 2009;
 
-$from = 1789;
-$to = 2018;
+$lines = file("lib/stop.csv", FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+$stop = array_flip($lines);
 
+$start1 = 1919;
+if (isset($_REQUEST['start1']) &&  is_numeric($_REQUEST['start1'])) $start1 = $_REQUEST['start1'];
+if ($start1 < $datemin) $start1 = $datemin;
+if ($start1 > $datemax) $start1 = $datemax;
 
+$end1 = 1938;
+if (isset($_REQUEST['end1']) && is_numeric($_REQUEST['end1'])) $end1 = $_REQUEST['end1'];
+if ($end1 < $start1) $end1 = $start1;
+if ($end1 > $datemax) $end1 = $datemax;
 
-if (!isset($datemax)) $datemax = 2009;
-if (!isset($from)) $from = 1900;
-if (!isset($to)) $to = $datemax;
-if (!isset($smooth)) $smooth = 0;
+$start2 = 1939;
+if (isset($_REQUEST['start2']) &&  is_numeric($_REQUEST['start2'])) $start2 = $_REQUEST['start2'];
+if ($start2 < $datemin) $start2 = $datemin;
+if ($start2 > $datemax) $start2 = $datemax;
 
-if (isset($_REQUEST['from']) &&  is_numeric($_REQUEST['from'])) $from = $_REQUEST['from'];
-if ($from < 1452) $from = 1452;
-if ($from > $datemax) $from = $datemax;
+$end2 = 1945;
+if (isset($_REQUEST['end2']) && is_numeric($_REQUEST['end2'])) $end2 = $_REQUEST['end2'];
+if ($end2 < $start2) $end2 = $start2;
+if ($end2 > $datemax) $end2 = $datemax;
 
-if (isset($_REQUEST['to']) && is_numeric($_REQUEST['to'])) $to = $_REQUEST['to'];
-if ($to < 1475) $to = $datemax;
-if ($to > $datemax) $to = $datemax;
+$pc = 80;
+if (isset($_REQUEST['pc']) && is_numeric($_REQUEST['pc'])) $pc = $_REQUEST['pc'];
+$pc = abs($pc);
+
+$rankinf = 1000;
+if (isset($_REQUEST['rankinf']) && is_numeric($_REQUEST['rankinf'])) $rankinf = $_REQUEST['rankinf'];
+
 
 $pdo = new PDO('sqlite:g1gram.sqlite');
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_WARNING);
 $pdo->exec("pragma synchronous = off;");
-
-$q = "vie";
-if (isset($_REQUEST['q'])) $q = $_REQUEST['q'];
-$words = preg_split("@[ ,]+@", $q);
 
 
 ?>
@@ -32,254 +43,132 @@ $words = preg_split("@[ ,]+@", $q);
 <html>
   <head>
     <meta charset="UTF-8" />
-    <script src="lib/dygraph.js">//</script>
-    <script src="lib/plotHistory.js">//</script>
-    <link rel="stylesheet" type="text/css" href="lib/dygraph.css"/>
     <link rel="stylesheet" type="text/css" href="g1gram.css"/>
-<?php
-
-// strip unknown words
-$select = $pdo->prepare("SELECT count FROM word WHERE form = ?");
-$select->bindParam(1, $form, PDO::PARAM_STR);
-$form = null;
-$forms = array();
-foreach ($words as $form) {
-  $select->execute();
-  if(!$select->fetch(PDO::FETCH_NUM)) continue;
-  $forms[] = $form;
-}
-$table = "lemma";
-// test if forms are all in lemma table,
-$select = $pdo->prepare("SELECT count FROM lemma WHERE form = ?");
-$select->bindParam(1, $form, PDO::PARAM_STR);
-foreach ($forms as $form) {
-  $select->execute();
-  if(!$select->fetch(PDO::FETCH_NUM)) {
-    $table = "word";
-    break;
-  }
-}
-
-
-$year = $value = $max = 0;
-$maxrank = 1000000;
-$min = 1000000;
-$data = array();
-
-
-
-
-$select = $pdo->prepare("SELECT rank FROM $table WHERE form = ? and year = ?; ");
-$select->bindParam(1, $form, PDO::PARAM_STR);
-$select->bindParam(2, $year, PDO::PARAM_INT);
-$i = 0;
-$smooth= 10;
-$smoothCoef = 1.5;
-$deviation = array();
-foreach ($forms as $form) {
-  $dragged = array_fill(0, $smooth, 0);
-  $lastvalue = 0;
-  $lastdelta = 0;
-  for ($year=$from; $year <= $to; $year++) {
-    $select->execute();
-    list($value) = $select->fetch(PDO::FETCH_NUM);
-    if (!$value) {
-      $dragged[$year % $smooth] = 0;
-      $data[$year][$i] = "null";
-      $deviation[$year][$i] = 0;
-    }
-    else {
-      if ($value < 1000000 && $max < $value) $max = $value;
-      if ($value && $min > $value) $min = $value;
-      $data[$year][$i] = $value;
-      if ($lastvalue) $dragged[$year % $smooth] = ($lastvalue - $value);
-      $delta = abs(array_sum($dragged) / $smooth);
-      $delta = 2 * $delta;
-      if ($delta < $value/20) $delta = 0;
-      $deviation[$year][$i] = $delta;
-    }
-    $lastvalue = $value;
-  }
-  $i++;
-}
-?>
-    <script>
-
-data = [
-<?php
-$first = true;
-$cols = count($forms);
-for ($year=$from; $year <= $to; $year++) {
-  if ($first) {
-    $first = false;
-  } else {
-    echo ",\n";
-  }
-  echo "  [", $year, ", ", implode(", ", $data[$year]), "]";
-}
-  ?>
-
-];
-
-
-labels = ["année", "<?= implode('", "', $forms)?>"];
-const ROLL_STORE = 'g1gramRoll';
-var rollPeriod = localStorage.getItem(ROLL_STORE);
-if (!rollPeriod) rollPeriod = 2;
-// draw the graph with all the configuration
-attrs = {
-  title : "<?= ($table == "lemma")?"Lemmes":"Mots" ?> de Google Books 2012 en ordre de fréquence",
-  ylabel: "Rang",
-  labels: labels,
-  legend: "follow",
-  labelsSeparateLines: true,
-  ylabel: "Rang",
-  // errorBars: true,
-  fillAlpha: 0.25,
-  logscale: true,
-  strokeWidth: 15,
-  plotter: Dygraph.plotHistory,
-  // xlabel: "Répartition des années en nombre de mots",
-  colors:[
-    'hsla(0, 50%, 50%, 1)',
-    'hsla(224, 50%, 50%, 1)',
-    'hsla(128, 50%, 30%, 1)',
-    'hsla(32, 50%, 50%, 1)',
-    'hsla(192, 50%, 50%, 1)',
-    'hsla(96, 50%, 50%, 1)',
-    'hsla(64, 80%, 50%, 1)',
-  ],
-  highlightSeriesOpts: {
-    // strokeWidth: 3
-  },
-  // showRoller: true,
-  rollPeriod: 1,
-  drawCallback: function() {
-    localStorage.setItem(ROLL_STORE, this.rollPeriod());
-  },
-  /*
-  pointSize: 6,
-  drawPointCallback: function (g, name, ctx, canvasx, canvasy, color, radius) {
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.globalAlpha = 0.1;
-    ctx.arc(canvasx, canvasy, radius, 0, 2 * Math.PI, false);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.fillStyle = "#000";
-    ctx.globalAlpha = 1;
-    ctx.arc(canvasx, canvasy, 1.5, 0, 2 * Math.PI, false);
-    ctx.fill();
-  },
-  */
-  axes : {
-    x: {
-      independentTicks: true,
-      drawGrid: true,
-      // gridLineColor: "rgba( 128, 128, 128, 0.1)",
-      // gridLineWidth: 1,
-      ticker: function(a, b, pixels, opts, dygraph, vals) {
-        return [
-          {"v": 1648, "label": 1648},
-          {"v": 1715, "label": 1715},
-          {"v": 1762, "label": 1762},
-          {"v": 1789, "label": "1789        "},
-          {"v": 1795, "label": "        1795"},
-          {"v": 1815, "label": 1815},
-          {"v": 1830, "label": 1830},
-          {"v": 1848, "label": 1848},
-          {"v": 1870, "label": 1870},
-          {"v": 1900, "label": 1900},
-          {"v": 1914, "label": "1914        "},
-          {"v": 1918, "label": "        1918"},
-          {"v": 1939, "label": "1939        "},
-          {"v": 1945, "label": "        1945"},
-          {"v": 1968, "label": 1968},
-          {"v": 2000, "label": 2000},
-        ]
-      },
-    },
-    y: {
-      axisLabelFormatter: function(num) {
-        return num.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1 ');
-      },
-      drawGrid: true,
-      //valueRange: [<?= 220000 ?>, <?= min($min * 0.9, 50) ?>],
-      valueRange: [<?= $max * 1.1 ?>, <?= $min * 0.9 ?>],
-      // gridLineColor: "rgba( 128, 128, 128, 0.1)",
-      // gridLineWidth: 1,
-    },
-  },
-};
-// ’Evénements
-attrs.underlayCallback = function(canvas, area, g) {
-  canvas.fillStyle = "rgba(192, 192, 192, 0.2)";
-  var periods = [[1562,1598], [1648,1653], [1789,1795], [1870,1871], [1914,1918], [1939,1945]];
-  var lim = periods.length;
-  for (var i = 0; i < lim; i++) {
-    var bottom_left = g.toDomCoords(periods[i][0], -20);
-    var top_right = g.toDomCoords(periods[i][1], +20);
-    var left = bottom_left[0];
-    var right = top_right[0];
-    canvas.fillRect(left, area.y, right - left, area.h);
-  }
-};
-    </script>
   </head>
   <body>
-    <form>
-      <input size="50" name="q" value="<?= $q ?>" autocomplete="off" autofocus="true"/>
-      <input class="year" size="4" name="from" value="<?= $from ?>"/>
-      <input class="year" size="4" name="to" value="<?= $to ?>"/>
-      <button type="submit">▶</button>
-    </form>
-    <div id="chart" class="dygraph"></div>
-
+     <?php include("header.php") ?>
+    <table align="center">
+      <form>
+        <caption>
+           différence des rangs >
+          <input class="year" tabindex="-1"
+            size="4" name="pc" value="<?= $pc ?>"
+          />%
+          <button tabindex="-1" type="submit">Lancer</button>
+        </caption>
+        <thead>
+          <tr>
+            <th style="text-align: left;">
+              <input class="year" size="4"
+                name="start1" value="<?= $start1 ?>"
+              />
+            </th>
+            <th style="text-align: right">
+              <input class="year" size="4"
+                name="end1" value="<?= $end1 ?>"
+              />
+            </th>
+            <th style="text-align: left;">
+              <input class="year" size="4"
+                name="start2" value="<?= $start2 ?>"
+              />
+            </th>
+            <th style="text-align: right;">
+              <input class="year" size="4"
+                name="end2" value="<?= $end2 ?>"
+              />
+            </th>
+        </form>
+      </thead>
 <?php
+$select = $pdo->prepare("SELECT form, avg(rank) AS ranker FROM lemma WHERE year >= ? AND year <= ? GROUP BY form ORDER BY ranker ASC LIMIT 100000;");
+$form = null;
+$avg = 0.0;
 
-/*
-
-$select = $pdo->prepare(
-  "SELECT year, form, count FROM word WHERE year = ? ORDER BY COUNT DESC"
-);
-$year = 1789;
-$row = array();
-$select->bindParam(1, $year, PDO::PARAM_INT);
-for ($year; $year < 2019; $year++) {
-  $lim = 1000;
-  echo "<td>", $year;
-  $select->execute();
-  while($lim-- > 0) {
-    $row = $select->fetch();
-  }
-  echo "</td>";
+$period1 = array();
+$select->execute(array($start1, $end1));
+while((list($form, $avg) = $select->fetch(PDO::FETCH_NUM))) {
+  $period1[$form] = $avg;
 }
-*/
 
+$period2 = array();
+$select->execute(array($start2, $end2));
+while((list($form, $avg) = $select->fetch(PDO::FETCH_NUM))) {
+  $period2[$form] = $avg;
+}
+
+
+$tab = null;
+$limit = 100;
+ ?>
+      <tbody>
+        <tr>
+          <td style="text-align:left; vertical-align: top;" colspan="2">
+<?php
+$tab = filter($period1, $period2, 1 + abs($pc)/100 );
+$i = $limit;
+foreach ($tab as $form => $data) {
+  if($i <= 0) break;
+  if($data[1] < 0) $dif = "∞";
+  else $dif = round(100 * ($data[1] - $data[0]) / $data[0]);
+  echo "<div>",round($data[0]),"# <b>",$form,"</b> ", $dif,"%</div>";
+  $i--;
+}
 ?>
-    <script>
-var div = document.getElementById("chart");
-var g = new Dygraph(div, data, attrs);
-g.ready(function() {
-  var anns = g.annotations();
-  let word = "<?php if (isset($forms[1])) echo $forms[1]; else echo $forms[0]; ?>";
-  g.setAnnotations(anns.concat([
-    {series: word, x: "1789", shortText: "1789", width: "", height: "", cssClass: "annv"},
-    {series: word, x: "1815", shortText: "1815", width: "", height: "", cssClass: "annv"},
-    {series: word, x: "1830", shortText: "1830", width: "", height: "", cssClass: "annv"},
-    {series: word, x: "1848", shortText: "1848", width: "", height: "", cssClass: "annv"},
-    {series: word, x: "1870", shortText: "1870", width: "", height: "", cssClass: "annv"},
-    {series: word, x: "1914", shortText: "1914", width: "", height: "", cssClass: "annv"},
-    {series: word, x: "1939", shortText: "1939", width: "", height: "", cssClass: "annv"},
-    {series: word, x: "1968", shortText: "1968", width: "", height: "", cssClass: "annv"},
-    // {series: word, x: "1989", shortText: "1989", width: "", height: "", cssClass: "annv"},
-    <?php
-foreach ($forms as $form) {
-  echo '    {series:"'.$form.'", shortText:"'.$form.'", x: '.$to.', width: "", height: "", cssClass: "ann"},'."\n";
+          </td>
+<?php
+/*
+          <td style="text-align:center; vertical-align: top;">
+$marg = 1;
+$ratio = 1 + $marg/100;
+$i = $limit;
+foreach ($period1 as $form => $rank) {
+  if($i <= 0) break;
+  if($rank < $rankinf) continue;
+  if (!isset($period2[$form])) continue;
+  $rank2 = $period2[$form];
+  if($rank2 < $rankinf) continue;
+  if (abs($rank2 - $rank) / ($rank2 + $rank) > 0.02) continue;
+  // if($rank * $ratio >= $ratio) continue;
+  echo "<div>",round($rank),"# <b>", $form,"</b> #",round($rank2),"</div>";
+  $i--;
 }
-     ?>
-  ]));
-});
-    </script>
+          </td>
+*/
+?>
+          <td style="text-align:right;  vertical-align: top;" colspan="2">
+<?php
+$tab = filter($period2, $period1, 1 + abs($pc)/100);
+$i = $limit;
+foreach ($tab as $form => $data) {
+  if($i <= 0) break;
+  if($data[1] < 0) $dif = "∞";
+  else $dif = round(100 * ($data[1] - $data[0]) / $data[0]);
+  echo "<div>",$dif,"% <b>", $form,"</b> #",round($data[0]),"</div>";
+  $i--;
+}
+?>
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </body>
 </html>
+<?php
+function filter(&$src, &$ref, $ratio)
+{
+  $out = array();
+  foreach ($src as $form => $rank) {
+    if (!isset($ref[$form])) {
+      $out[$form] = array($rank, -1);
+      continue;
+    }
+    $rank2 = $ref[$form];
+    if($rank2 >= $rank * $ratio) $out[$form] = array($rank, $rank2);
+  }
+  return $out;
+}
+
+
+
+ ?>
