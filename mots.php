@@ -128,10 +128,9 @@ var rollPeriod = localStorage.getItem(ROLL_STORE);
 if (!rollPeriod) rollPeriod = 2;
 // draw the graph with all the configuration
 attrs = {
-  title : "<?= ($table == "lemma")?"Lemmes":"Mots" ?> de Google Books 2012 français (rang 1 = fréquent, 500K = 500 000 = rare)",
+  title : "<?= ($table == "lemma")?"Lemmes":"Mots" ?> de Google Books 2012 en ordre de fréquence",
   ylabel: "Rang",
   labels: labels,
-  // labelsKMB: true,
   legend: "follow",
   labelsSeparateLines: true,
   ylabel: "Rang",
@@ -146,9 +145,9 @@ attrs = {
     'hsla(224, 50%, 50%, 1)',
     'hsla(128, 50%, 30%, 1)',
     'hsla(32, 50%, 50%, 1)',
-    'hsla(64, 80%, 50%, 1)',
     'hsla(192, 50%, 50%, 1)',
     'hsla(96, 50%, 50%, 1)',
+    'hsla(64, 80%, 50%, 1)',
   ],
   highlightSeriesOpts: {
     // strokeWidth: 3
@@ -201,7 +200,9 @@ attrs = {
       },
     },
     y: {
-      labelsKMB: true,
+      axisLabelFormatter: function(num) {
+        return num.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1 ');
+      },
       drawGrid: true,
       //valueRange: [<?= 220000 ?>, <?= min($min * 0.9, 50) ?>],
       valueRange: [<?= $max * 1.1 ?>, <?= $min * 0.9 ?>],
@@ -210,6 +211,7 @@ attrs = {
     },
   },
 };
+// ’Evénements
 attrs.underlayCallback = function(canvas, area, g) {
   canvas.fillStyle = "rgba(192, 192, 192, 0.2)";
   var periods = [[1562,1598], [1648,1653], [1789,1795], [1870,1871], [1914,1918], [1939,1945]];

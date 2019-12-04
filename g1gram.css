@@ -51,3 +51,13 @@ form.time {
   display: flex;
   justify-content: space-between;
 }
+
+div.cols {
+  display: flex;
+  justify-content: center;
+}
+div.cols > div {
+  border: 1px solid;
+  margin: 0 1rem;
+  padding: 0 1rem;
+}
