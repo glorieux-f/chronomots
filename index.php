@@ -23,7 +23,7 @@ $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_WARNING);
 $pdo->exec("pragma synchronous = off;");
 
 $q = "liberté, égalité, fraternité, laïcité";
-if (isset($_REQUEST['q'])) $q = $_REQUEST['q'];
+if (isset($_REQUEST['q']) && $_REQUEST['q']) $q = $_REQUEST['q'];
 $words = preg_split("@[ ,]+@", $q);
 
 
@@ -137,7 +137,7 @@ attrs = {
   // errorBars: true,
   fillAlpha: 0.25,
   logscale: true,
-  strokeWidth: 15,
+  strokeWidth: 1,
   plotter: Dygraph.plotHistory,
   // xlabel: "Répartition des années en nombre de mots",
   colors:[
@@ -233,6 +233,11 @@ attrs.underlayCallback = function(canvas, area, g) {
       <input class="year" size="4" name="from" value="<?= $from ?>"/>
       <input class="year" size="4" name="to" value="<?= $to ?>"/>
       <button type="submit">▶</button>
+      <?php
+      $gq = preg_split("@[ ,]+@", $q);
+      $gq = implode(", ", $gq);
+       ?>
+      Voir dans <a target="_blank" href="https://books.google.com/ngrams/graph?content=<?= $gq ?>&amp;year_start=<?= $from ?>&amp;year_end=<?= $to ?>&amp;corpus=19&amp;smoothing=3">Google Books NGram Viewer</a>
     </form>
     <div id="chart" class="dygraph"></div>
 
