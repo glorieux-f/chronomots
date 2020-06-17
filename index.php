@@ -135,10 +135,10 @@ attrs = {
   labelsSeparateLines: true,
   ylabel: "Rang",
   // errorBars: true,
-  fillAlpha: 0.25,
-  logscale: true,
-  strokeWidth: 1,
   plotter: Dygraph.plotHistory,
+  fillAlpha: 0.25,
+  strokeWidth: 2,
+  logscale: true,
   // xlabel: "Répartition des années en nombre de mots",
   colors:[
     'hsla(0, 50%, 50%, 1)',
@@ -227,18 +227,20 @@ attrs.underlayCallback = function(canvas, area, g) {
     </script>
   </head>
   <body>
-	<?php include("header.php") ?>
-    <form>
-      <input size="50" name="q" value="<?= $q ?>" autocomplete="off" autofocus="true"/>
-      <input class="year" size="4" name="from" value="<?= $from ?>"/>
-      <input class="year" size="4" name="to" value="<?= $to ?>"/>
-      <button type="submit">▶</button>
-      <?php
-      $gq = preg_split("@[ ,]+@", $q);
-      $gq = implode(", ", $gq);
-       ?>
-      Voir dans <a target="_blank" href="https://books.google.com/ngrams/graph?content=<?= $gq ?>&amp;year_start=<?= $from ?>&amp;year_end=<?= $to ?>&amp;corpus=19&amp;smoothing=3">Google Books NGram Viewer</a>
-    </form>
+    <header id="header">
+      <?php include("header.php") ?>
+      <form>
+        <input size="50" name="q" value="<?= $q ?>" autocomplete="off" autofocus="true"/>
+        <input class="year" size="4" name="from" value="<?= $from ?>"/>
+        <input class="year" size="4" name="to" value="<?= $to ?>"/>
+        <button type="submit">▶</button>
+        <?php
+        $gq = preg_split("@[ ,]+@", $q);
+        $gq = implode(", ", $gq);
+         ?>
+        Voir dans <a target="_blank" href="https://books.google.com/ngrams/graph?content=<?= $gq ?>&amp;year_start=<?= $from ?>&amp;year_end=<?= $to ?>&amp;corpus=19&amp;smoothing=3">Google Books NGram Viewer</a>
+      </form>
+    </header>
     <div id="chart" class="dygraph"></div>
 
 <?php
@@ -270,14 +272,14 @@ g.ready(function() {
   var anns = g.annotations();
   let word = "<?php if (isset($forms[1])) echo $forms[1]; else echo $forms[0]; ?>";
   g.setAnnotations(anns.concat([
-    {series: word, x: "1789", shortText: "1789", width: "", height: "", cssClass: "annv"},
-    {series: word, x: "1815", shortText: "1815", width: "", height: "", cssClass: "annv"},
-    {series: word, x: "1830", shortText: "1830", width: "", height: "", cssClass: "annv"},
-    {series: word, x: "1848", shortText: "1848", width: "", height: "", cssClass: "annv"},
-    {series: word, x: "1870", shortText: "1870", width: "", height: "", cssClass: "annv"},
-    {series: word, x: "1914", shortText: "1914", width: "", height: "", cssClass: "annv"},
-    {series: word, x: "1939", shortText: "1939", width: "", height: "", cssClass: "annv"},
-    {series: word, x: "1968", shortText: "1968", width: "", height: "", cssClass: "annv"},
+    // {series: word, x: "1789", shortText: "1789", width: "", height: "", cssClass: "annv"},
+    // {series: word, x: "1815", shortText: "1815", width: "", height: "", cssClass: "annv"},
+    // {series: word, x: "1830", shortText: "1830", width: "", height: "", cssClass: "annv"},
+    // {series: word, x: "1848", shortText: "1848", width: "", height: "", cssClass: "annv"},
+    // {series: word, x: "1870", shortText: "1870", width: "", height: "", cssClass: "annv"},
+    // {series: word, x: "1914", shortText: "1914", width: "", height: "", cssClass: "annv"},
+    // {series: word, x: "1939", shortText: "1939", width: "", height: "", cssClass: "annv"},
+    // {series: word, x: "1968", shortText: "1968", width: "", height: "", cssClass: "annv"},
     // {series: word, x: "1989", shortText: "1989", width: "", height: "", cssClass: "annv"},
     <?php
 foreach ($forms as $form) {

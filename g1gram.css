@@ -1,21 +1,31 @@
-body, html {
-  height: 100%;
-}
-
-body {
-  font-family: "Open Sans", "Ubuntu", "Calibri", "Segoe UI", Avenir, Helvetica, sans-serif;
-}
-
 * {
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
   -ms-box-sizing: border-box;
   box-sizing: border-box;
 }
+body, html {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Open Sans", "Ubuntu", "Calibri", "Segoe UI", Avenir, Helvetica, sans-serif;
+  background: #FFFFFF;
+}
+
+#header {
+  position: absolute;
+  max-height: 3rem;
+}
 
 #chart {
-  width: 90%;
-  height: 90%;
+  position: absolute;
+  top: 5rem;
+  bottom: 1rem;
+  width: 85%;
+  left: 1rem;
 }
 
 .ann {

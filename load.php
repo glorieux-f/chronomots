@@ -1,12 +1,13 @@
 <?php
 mb_internal_encoding ("UTF-8");
+G1gram::min();
 // G1gram::count();
 // G1gram::lexique();
-G1gram::connect("g1gram.sqlite");
+// G1gram::connect("g1gram.sqlite");
 // G1gram::global();
 // G1gram::walk();
 // G1gram::ranks();
-G1gram::ranks();
+// G1gram::ranks();
 
 
 // G1gram::ranks();
@@ -18,6 +19,29 @@ class G1gram {
   static $years = array();
   /** dicolecte */
   static $dic;
+
+  static public function min()
+  {
+    $glob = dirname(__FILE__).'/data/googlebooks-fre-all-1gram-20120701-*.gz';
+    $dic = array();
+    foreach(glob($glob) as $srcFile) {
+      $start = microtime(true);
+      fwrite(STDERR, $srcFile);
+      $handle = fopen("compress.zlib://".$srcFile, "r");
+      while (($line = fgets($handle, 4096)) !== FALSE) {
+        list($form, $year, $count) = explode("\t", $line);
+        if (isset($dic[$form]) && $dic[$form] > $count) $dic[$form] = $count;
+        else $dic[$form] = $count;
+      }
+      fwrite(STDERR, " ".(microtime(true) - $start)."\n");
+    }
+    /*
+    arsort($dic);
+    print_r(array_slice($dic, 0, 1000));
+    */
+    asort($dic);
+    print_r(array_slice($dic, 0, 1000));
+  }
 
   /**
    * Charger les stats globales
