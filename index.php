@@ -1,26 +1,24 @@
 <?php
 
+$datemax = 2019;
+$datemin = 1450;
 $from = 1770;
-$to = 2018;
-
-
-
-if (!isset($datemax)) $datemax = 2009;
-if (!isset($from)) $from = 1900;
-if (!isset($to)) $to = $datemax;
-if (!isset($smooth)) $smooth = 0;
+$to = 2019;
 
 if (isset($_REQUEST['from']) &&  is_numeric($_REQUEST['from'])) $from = $_REQUEST['from'];
-if ($from < 1452) $from = 1452;
+if ($from < $datemin) $from = $datemin;
 if ($from > $datemax) $from = $datemax;
 
 if (isset($_REQUEST['to']) && is_numeric($_REQUEST['to'])) $to = $_REQUEST['to'];
-if ($to < 1475) $to = $datemax;
+if ($to < $datemin) $to = $datemax;
 if ($to > $datemax) $to = $datemax;
 
-$pdo = new PDO('sqlite:g1gram.sqlite');
+$pdo = new PDO('sqlite:lexichrone.sqlite');
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_WARNING);
 $pdo->exec("pragma synchronous = off;");
+
+
+$smooth = 0; // no used
 
 $q = "liberté, égalité, fraternité, laïcité";
 if (isset($_REQUEST['q']) && $_REQUEST['q']) $q = $_REQUEST['q'];
@@ -35,7 +33,7 @@ $words = preg_split("@[ ,]+@", $q);
     <script src="lib/dygraph.js">//</script>
     <script src="lib/plotHistory.js">//</script>
     <link rel="stylesheet" type="text/css" href="lib/dygraph.css"/>
-    <link rel="stylesheet" type="text/css" href="g1gram.css"/>
+    <link rel="stylesheet" type="text/css" href="lexichrone.css"/>
 <?php
 
 // strip unknown words
@@ -123,12 +121,12 @@ for ($year=$from; $year <= $to; $year++) {
 
 
 labels = ["année", "<?= implode('", "', $forms)?>"];
-const ROLL_STORE = 'g1gramRoll';
+const ROLL_STORE = 'lexichroneRoll';
 var rollPeriod = localStorage.getItem(ROLL_STORE);
 if (!rollPeriod) rollPeriod = 2;
 // draw the graph with all the configuration
 attrs = {
-  title : "<?= ($table == "lemma")?"Lemmes":"Mots" ?> de Google Books 2012 en ordre de fréquence",
+  title : "<?= ($table == "lemma")?"Lemmes":"Mots" ?> de Google Books 2019, chronologie et rangs",
   ylabel: "Rang",
   labels: labels,
   legend: "follow",
@@ -141,13 +139,15 @@ attrs = {
   logscale: true,
   // xlabel: "Répartition des années en nombre de mots",
   colors:[
-    'hsla(0, 50%, 50%, 1)',
-    'hsla(224, 50%, 50%, 1)',
-    'hsla(128, 50%, 30%, 1)',
-    'hsla(32, 50%, 50%, 1)',
-    'hsla(192, 50%, 50%, 1)',
-    'hsla(96, 50%, 50%, 1)',
-    'hsla(64, 80%, 50%, 1)',
+    'hsla(0, 50%, 50%, 1)',   // 1
+    'hsla(225, 50%, 50%, 1)', // 2
+    'hsla(90, 60%, 30%, 1)',  // 3
+    'hsla(45, 80%, 50%, 1)',  // 4
+    'hsla(180, 50%, 40%, 1)', // 5
+    'hsla(270, 50%, 50%, 1)', // 6
+    'hsla(135, 70%, 50%, 1)',
+    'hsla(215, 90%, 50%, 1)',
+    'hsla(0, 30%, 50%, 1)',
   ],
   highlightSeriesOpts: {
     // strokeWidth: 3
@@ -195,7 +195,9 @@ attrs = {
           {"v": 1939, "label": "1939        "},
           {"v": 1945, "label": "        1945"},
           {"v": 1968, "label": 1968},
-          {"v": 2000, "label": 2000},
+          {"v": 1989, "label": 1989},
+          {"v": 2005, "label": 2005},
+          {"v": 2018, "label": 2019},
         ]
       },
     },
@@ -238,7 +240,7 @@ attrs.underlayCallback = function(canvas, area, g) {
         $gq = preg_split("@[ ,]+@", $q);
         $gq = implode(", ", $gq);
          ?>
-        Voir dans <a target="_blank" href="https://books.google.com/ngrams/graph?content=<?= $gq ?>&amp;year_start=<?= $from ?>&amp;year_end=<?= $to ?>&amp;corpus=19&amp;smoothing=3">Google Books NGram Viewer</a>
+        Voir dans <a target="_blank" href="https://books.google.com/ngrams/graph?content=<?= $gq ?>&amp;year_start=<?= $from ?>&amp;year_end=<?= $to ?>&amp;corpus=30&amp;smoothing=3">Google Books NGram Viewer</a>
       </form>
     </header>
     <div id="chart" class="dygraph"></div>

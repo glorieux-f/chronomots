@@ -14,6 +14,16 @@ body {
   font-family: "Open Sans", "Ubuntu", "Calibri", "Segoe UI", Avenir, Helvetica, sans-serif;
   background: #FFFFFF;
 }
+td {
+  padding: 0 0.5rem;
+}
+td.num {
+  text-align: right;
+  color: #999;
+}
+tbody tr:nth-child(odd) {
+  background: #eee;
+}
 
 #header {
   position: absolute;
@@ -71,3 +81,4 @@ div.cols > div {
   margin: 0 1rem;
   padding: 0 1rem;
 }
+
